@@ -45,14 +45,28 @@ module.exports =
         else
             if styleElement? then atom.styles.removeStyleElement(styleElement)
 
+        @subscriptions = new CompositeDisposable
+
+        @subscriptions.add atom.commands.add('atom-workspace', {
+          'atom-notifier:sendMsg': (notify) => @notifyCommand(notify.detail)
+        })
+
         @add()
 
     loadNotifier: ->
         notifier ?= require 'node-notifier'
 
+    notifyCommand: (notify) ->
+      notifyPayload = {
+        getType: () => notify.type || 'info',
+        getMessage: () => notify.message || 'info',
+        getDetail: () => notify.message
+      }
+
+      @send notifyPayload
+
     add: ->
-        subscriptions = new CompositeDisposable
-        subscriptions.add atom.notifications.onDidAddNotification (Notification) =>
+        @subscriptions.add atom.notifications.onDidAddNotification (Notification) =>
             unless unfocused and not document.body.classList.contains('is-blurred')
                 if Notification then @send Notification
 
@@ -71,4 +85,4 @@ module.exports =
         notifier.notify(params)
 
     deactivate: ->
-        subscriptions?.dispose()
+        @subscriptions?.dispose()
